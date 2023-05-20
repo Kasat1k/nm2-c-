@@ -1,16 +1,29 @@
 ﻿using System;
+using System.Runtime.InteropServices;
 
-class GaussMethod
+class Nm2
 {
+    const int n = 7;   // Розмірність матриці
     static void Main()
     {
-        double[,] matrix = {
-            { 2, 1, -1, 8 },
-            { -3, -1, 2, -11 },
-            { -2, 1, 2, -3 }
-        };
+        double ab(int k)
+        {
+            double a = (1 + (2.0 / k));
+            return a;
+        }
+        double cb(int k)
+        {
+            double c = (7 - (1.0 / k));
 
-        int n = matrix.GetLength(0); // Розмірність матриці
+            return c;
+        }
+
+        double[,] matrix = new double[n,n+1];
+        for (int i = 0; i < n ; i++) { matrix[0,i] = ab(i+1); }
+        for (int i = 1; i < n ; i++) { matrix[i,i] = cb(i+1); matrix[i,i - 1] = (-1) * cb(i ); }
+       for (int i = 0; i < n ; i++) { matrix[i, n] = n - i + 1; }
+
+
 
         Console.WriteLine("Початкова матриця:");
         PrintMatrix(matrix);
@@ -50,15 +63,18 @@ class GaussMethod
 
         // Знаходимо вектор нев'язки
         double[] residuals = new double[n];
-        for (int i = n - 1; i >= 0; i--)
+        for (int i = 0; i < n; i++)
         {
             double sum = 0;
-            for (int j = i + 1; j < n; j++)
+
+            for (int j = 0; j < n; j++)
             {
-                sum += matrix[i, j] * residuals[j];
+                sum += matrix[i, j] * solution[j];
             }
-            residuals[i] = (matrix[i, n] - sum) / matrix[i, i];
+            residuals[i] = matrix[i, n] - sum;
         }
+
+
         Console.WriteLine("\nВектор нев'язки:");
         PrintVector(residuals);
 
@@ -81,6 +97,32 @@ class GaussMethod
         double[,] MultipliedMatrix = MultiplyInverseMatrix(inverseMatrix, matrix);
         Console.WriteLine("\nМноження матриць:");
         PrintMatrix(MultipliedMatrix);
+
+
+        // Seidel
+
+
+        double[,] coefficients = matrix;
+        double[] initialGuess =  new double[n] ;
+        Array.Fill(initialGuess, 0.0);
+        PrintMatrix(coefficients);
+        double[] solutionSeidel = SolveSeidelMethod(coefficients, initialGuess, 0.0001);
+
+        Console.WriteLine("Рішення:");
+        for (int i = 0; i < solutionSeidel.Length; i++)
+        {
+            Console.WriteLine($"x{i + 1} = {solutionSeidel[i]}");
+        }
+
+        double[] residual = CalculateResidual(coefficients, solutionSeidel);
+        Console.WriteLine("\nВектор нев'язки:");
+        for (int i = 0; i < residual.Length; i++)
+        {
+            Console.WriteLine($"r{i + 1} = {residual[i]}");
+        }
+
+        Console.ReadLine();
+
     }
 
 
@@ -126,7 +168,7 @@ class GaussMethod
         {
             for (int j = 0; j < cols; j++)
             {
-                Console.Write(matrix[i, j] + "\t\t");
+                Console.Write(matrix[i, j] + " |");
             }
             Console.WriteLine();
         }
@@ -265,5 +307,87 @@ class GaussMethod
 
         return result;
     }
+    
 
+
+   
+
+    static double[] SolveSeidelMethod(double[,] coefficients, double[] initialGuess, double epsilon)
+    {
+        int n = initialGuess.Length;
+        double[] previousSolution = new double[n];
+        double[] solution = (double[])initialGuess.Clone();
+        double error = epsilon + 1;
+        int iterations = 0;
+
+        while (error > epsilon)
+        {
+            iterations++;
+            for (int i = 0; i < n; i++)
+            {
+                previousSolution[i] = solution[i];
+            }
+
+            for (int i = 0; i < n; i++)
+            {
+                double sum1 = 0;
+                double sum2 = 0;
+
+                for (int j = 0; j < i; j++)
+                {
+                    sum1 += coefficients[i, j] * solution[j];
+                }
+
+                for (int j = i + 1; j < n; j++)
+                {
+                    sum2 += coefficients[i, j] * previousSolution[j];
+                }
+
+                solution[i] = (coefficients[i, n] - sum1 - sum2) / coefficients[i, i];
+            }
+
+            error = CalculateError(solution, previousSolution);
+        }
+
+        Console.WriteLine($"\nКількість Ітерацій: {iterations}");
+        return solution;
+    }
+
+    static double[] CalculateResidual(double[,] coefficients, double[] solution)
+    {
+        int n = solution.Length;
+        double[] residual = new double[n];
+
+        for (int i = 0; i < n; i++)
+        {
+            double sum = 0;
+
+            for (int j = 0; j < n; j++)
+            {
+                sum += coefficients[i, j] * solution[j];
+            }
+
+            residual[i] = coefficients[i, n] - sum;
+        }
+
+        return residual;
+    }
+
+    static double CalculateError(double[] currentSolution, double[] previousSolution)
+    {
+        double maxError = 0;
+
+        for (int i = 0; i < currentSolution.Length; i++)
+        {
+            double error = Math.Abs(currentSolution[i] - previousSolution[i]);
+            if (error > maxError)
+            {
+                maxError = error;
+            }
+        }
+
+        return maxError;
+    }
 }
+
+
