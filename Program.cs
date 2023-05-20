@@ -1,4 +1,5 @@
 ﻿using System;
+using System.ComponentModel.Design;
 using System.Runtime.InteropServices;
 
 class Nm2
@@ -6,6 +7,7 @@ class Nm2
     const int n = 7;   // Розмірність матриці
     static void Main()
     {
+     
         double ab(int k)
         {
             double a = (1 + (2.0 / k));
@@ -168,7 +170,11 @@ class Nm2
         {
             for (int j = 0; j < cols; j++)
             {
-                Console.Write(matrix[i, j] + " |");
+                if (matrix[i, j] < 0)
+                {
+                    Console.Write("{0:e8}", matrix[i, j]); Console.Write(" || ");
+                }
+                else { Console.Write(" "); Console.Write("{0:e8}", matrix[i, j]); Console.Write(" || "); }
             }
             Console.WriteLine();
         }
